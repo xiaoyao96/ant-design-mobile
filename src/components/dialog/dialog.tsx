@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, useState } from 'react'
+import React, { FC, ReactNode } from 'react'
 import { mergeProps } from '../../utils/with-default-props'
 import classNames from 'classnames'
 import Mask from '../mask'
@@ -6,10 +6,7 @@ import { Action, DialogActionButton } from './dialog-action-button'
 import Image from '../image'
 import Space from '../space'
 import { GetContainer } from '../../utils/render-to-container'
-import {
-  PropagationEvent,
-  withStopPropagation,
-} from '../../utils/with-stop-propagation'
+import { PropagationEvent } from '../../utils/with-stop-propagation'
 import AutoCenter from '../auto-center'
 import { useSpring, animated } from '@react-spring/web'
 import { NativeProps, withNativeProps } from '../../utils/native-props'
@@ -38,7 +35,6 @@ export type DialogProps = {
 } & NativeProps
 
 const defaultProps = {
-  visible: false,
   actions: [] as Action[],
   closeOnAction: false,
   closeOnMaskClick: false,
@@ -48,57 +44,32 @@ const defaultProps = {
 export const Dialog: FC<DialogProps> = p => {
   const props = mergeProps(defaultProps, p)
 
-  const style = useSpring({
+  const { scale } = useSpring({
     scale: props.visible ? 1 : 0.8,
-    opacity: props.visible ? 1 : 0,
     config: {
       mass: 1,
-      tension: 200,
-      friction: 30,
+      tension: 250,
+      friction: 20,
       clamp: true,
-    },
-    onStart: () => {
-      setActive(true)
-    },
-    onRest: () => {
-      setActive(props.visible)
-      if (!props.visible) {
-        props.afterClose?.()
-      }
     },
   })
 
-  const [active, setActive] = useState(props.visible)
-
-  return withStopPropagation(
-    props.stopPropagation,
-    withNativeProps(
-      props,
-      <div
-        className={classPrefix}
-        style={{
-          display: active ? 'unset' : 'none',
-        }}
-      >
-        <Mask
-          visible={props.visible}
-          destroyOnClose
-          getContainer={props.getContainer}
-          afterClose={props.afterClose}
-          onMaskClick={props.closeOnMaskClick ? props.onClose : undefined}
-          style={props.maskStyle}
-          className={classNames(`${classPrefix}-mask`, props.maskClassName)}
-        />
-        <div
-          className={`${classPrefix}-wrap`}
-          style={{
-            pointerEvents: props.visible ? 'unset' : 'none',
-          }}
-        >
+  return (
+    <Mask
+      visible={props.visible}
+      destroyOnClose
+      getContainer={props.getContainer}
+      afterClose={props.afterClose}
+      onMaskClick={props.closeOnMaskClick ? props.onClose : undefined}
+      style={props.maskStyle}
+      className={classNames(`${classPrefix}-mask`, props.maskClassName)}
+      stopPropagation={props.stopPropagation}
+    >
+      {withNativeProps(
+        props,
+        <div className={`${classPrefix}-wrap`}>
           <animated.div
-            style={{
-              ...style,
-            }}
+            style={{ scale }}
             onClick={e => e.stopPropagation()}
             className={`${classPrefix}-main`}
           >
@@ -143,6 +114,7 @@ export const Dialog: FC<DialogProps> = p => {
                         key={action.key}
                         action={action}
                         onAction={async () => {
+                          if (scale.isAnimating) return
                           await Promise.all([
                             action.onClick?.(),
                             props.onAction?.(action, index),
@@ -159,7 +131,7 @@ export const Dialog: FC<DialogProps> = p => {
             </div>
           </animated.div>
         </div>
-      </div>
-    )
+      )}
+    </Mask>
   )
 }
