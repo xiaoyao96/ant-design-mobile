@@ -37,7 +37,7 @@ export type PickerRef = PickerActions
 const classPrefix = `adm-picker`
 
 export type PickerProps = {
-  columns: PickerColumn[] | ((value: PickerValue[]) => PickerColumn[])
+  columns: PickerColumn[] | ((value: PickerValue[]) => PickerColumn[]) | null
   value?: PickerValue[]
   defaultValue?: PickerValue[]
   placeholder?: ReactNode

@@ -6,7 +6,7 @@ import { NativeProps, withNativeProps } from '../../utils/native-props'
 import { useDebounceEffect } from 'ahooks'
 import { PickerProps } from '../picker'
 import { defaultRenderLabel } from '../picker/picker-utils'
-import { isUndefined } from 'lodash'
+import { isNull, isUndefined } from 'lodash'
 
 const classPrefix = `adm-picker-view`
 
@@ -26,7 +26,7 @@ export type PickerColumnItem = {
 export type PickerColumn = (string | PickerColumnItem)[]
 
 export type PickerViewProps = {
-  columns: PickerColumn[] | ((value: PickerValue[]) => PickerColumn[])
+  columns: PickerColumn[] | ((value: PickerValue[]) => PickerColumn[]) | null
   value?: PickerValue[]
   defaultValue?: PickerValue[]
   mouseWheel?: boolean
@@ -106,8 +106,8 @@ export const PickerView = memo<PickerViewProps>(p => {
         />
       ))}
       <div className={`${classPrefix}-mask`}>
-        {!isUndefined(props?.placeholder) ? (
-          props?.placeholder
+        {isNull(props.columns) && !isUndefined(props.placeholder) ? (
+          props.placeholder
         ) : (
           <>
             <div className={`${classPrefix}-mask-top`} />

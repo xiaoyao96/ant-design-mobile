@@ -11,7 +11,8 @@ export function generateColumnsExtend(
   val: PickerValue[]
 ) {
   const columns = withCache(() => {
-    const c = typeof rawColumns === 'function' ? rawColumns(val) : rawColumns
+    const c =
+      typeof rawColumns === 'function' ? rawColumns(val) : rawColumns ?? []
     return c.map(column =>
       column.map(item =>
         typeof item === 'string'

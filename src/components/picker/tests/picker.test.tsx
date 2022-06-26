@@ -9,8 +9,14 @@ import {
   waitForElementToBeRemoved,
 } from 'testing'
 import { basicColumns } from '../demos/columns-data'
-import Picker, { PickerRef } from '..'
+import Picker, { PickerRef, PickerColumn } from '..'
 import Button from '../../button'
+import { useLockFn } from 'ahooks'
+
+async function mockRequest() {
+  await sleep(100)
+  return basicColumns
+}
 
 describe('Picker', () => {
   test('renderLabel works', async () => {
@@ -35,11 +41,15 @@ describe('Picker', () => {
 
   test('test Picker render children with PickerActions and click cancel button', async () => {
     const afterShow = jest.fn()
+    const onShow = jest.fn()
     const afterClose = jest.fn()
+    const onClose = jest.fn()
     const onCancel = jest.fn()
     render(
       <Picker
         onCancel={onCancel}
+        onShow={onShow}
+        onClose={onClose}
         cancelText='取消'
         columns={basicColumns}
         afterShow={afterShow}
@@ -62,12 +72,16 @@ describe('Picker', () => {
     )
 
     fireEvent.click(screen.getByTestId('toggle'))
+    expect(onShow).toBeCalledTimes(1)
     await waitFor(() => expect(afterShow).toBeCalledTimes(1))
     fireEvent.click(screen.getByTestId('close'))
+    expect(onClose).toBeCalledTimes(1)
     await waitFor(() => expect(afterClose).toBeCalledTimes(1))
     fireEvent.click(screen.getByTestId('open'))
+    expect(onShow).toBeCalledTimes(2)
     await waitFor(() => expect(afterShow).toBeCalledTimes(2))
     fireEvent.click(screen.getByText('取消'))
+    expect(onClose).toBeCalledTimes(2)
     await waitFor(() => expect(onCancel).toBeCalledTimes(1))
   })
 
@@ -171,5 +185,34 @@ describe('Picker', () => {
       ref.current?.open()
     })
     await waitFor(() => expect(afterShow).toBeCalled())
+  })
+
+  test('test Picker should work with `placeholder`', async () => {
+    const Wrapper = () => {
+      const [visible, setVisible] = useState(false)
+      const [columns, setColumns] = useState<PickerColumn[] | null>(null)
+      const onShow = useLockFn(async () => {
+        setColumns(await mockRequest())
+      })
+      return (
+        <>
+          <Button onClick={() => setVisible(true)} data-testid={'button'}>
+            button
+          </Button>
+          <Picker
+            placeholder={<div data-testid='placeholder'>loading</div>}
+            columns={columns}
+            visible={visible}
+            onShow={onShow}
+          />
+        </>
+      )
+    }
+    render(<Wrapper />)
+
+    fireEvent.click(screen.getByTestId('button'))
+    expect(screen.queryByTestId('placeholder')).toBeInTheDocument()
+    await screen.findByText(basicColumns[0][0].label)
+    expect(screen.queryByTestId('placeholder')).not.toBeInTheDocument()
   })
 })

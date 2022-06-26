@@ -3,7 +3,7 @@ import { Button, Picker, Skeleton, Space, Toast } from 'antd-mobile'
 import { DemoBlock, DemoDescription } from 'demos'
 import { basicColumns } from './columns-data'
 import { mockRequest } from './mockRequest'
-import { useRequest } from 'ahooks'
+import { useLockFn } from 'ahooks'
 
 type PickerColumnItem = {
   label: ReactNode
@@ -55,22 +55,17 @@ export default function () {
 
 function LazyLoadColumnsDemo() {
   const [visible, setVisible] = useState(false)
-  const [columns, setColumns] = useState<PickerColumn[]>([])
+  const [columns, setColumns] = useState<PickerColumn[] | null>(null)
 
-  const { loading, runAsync } = useRequest(mockRequest, {
-    manual: true,
-  })
-
-  const onShow = async () => {
-    if (!columns.length && !loading) {
+  const lazyLoadColumns = useLockFn(async () => {
+    if (!columns) {
       try {
-        const data = await runAsync(1500)
-        setColumns(data)
+        setColumns(await mockRequest(1500))
       } catch (error) {
         Toast.show('请求失败')
       }
     }
-  }
+  })
 
   return (
     <>
@@ -82,14 +77,11 @@ function LazyLoadColumnsDemo() {
         >
           懒加载数据
         </Button>
-        <DemoDescription>
-          异步请求结束前，你可以传入placeholder占位展示，
-          请求结束后，可以把placeholder手动置为undefined，防止请求失败Picker一直显示placeholder
-        </DemoDescription>
+        <DemoDescription>columns的值为null时才展示placeholder</DemoDescription>
       </Space>
       <Picker
-        placeholder={loading ? <PlaceHolder /> : undefined}
-        onShow={onShow}
+        placeholder={<PlaceHolder />}
+        onShow={lazyLoadColumns}
         columns={columns}
         visible={visible}
         onClose={() => {
